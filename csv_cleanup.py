@@ -1,19 +1,37 @@
-import csv
+import os
+import glob
+import pandas as pd
 
-def clean_csv(input_file, output_file):
-    with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
-        reader = csv.reader(infile)
-        writer = csv.writer(outfile)
+# Get the list of CSV files in the current directory
+csv_files = glob.glob('*.csv')  # Adjust the path if necessary
 
-        # Write only non-empty rows to the output file
-        for row in reader:
-            if any(row):  # Checks if the row has any non-empty values
-                writer.writerow(row)
+if not csv_files:
+    print("No CSV files found.")
+    exit()
 
-    print(f"CSV cleaned and saved to {output_file}")
+# Sort files by modification time and get the latest one
+latest_file = max(csv_files, key=os.path.getmtime)
 
-# Jenkins will trigger this script
-if __name__ == "__main__":
-    input_file = 'dirty_data.csv'    # Input CSV file
-    output_file = 'cleaned_data.csv'  # Output CSV file
-    clean_csv(input_file, output_file)
+print(f"Processing file: {latest_file}")
+
+# Read the latest CSV file
+df = pd.read_csv(latest_file)
+
+# Data Cleaning Logic
+# 1. Handle Null Values
+# Option 1: Drop rows with null values
+df_cleaned = df.dropna()
+
+# Option 2: Fill null values with a specific value (e.g., 0)
+# df_cleaned = df.fillna(0)
+
+# 2. Handle Duplicate Values
+# Remove duplicate rows
+df_cleaned = df_cleaned.drop_duplicates()
+
+# Additional cleaning logic can be added here...
+
+# Save cleaned data to a new file
+cleaned_file = f"cleaned_{latest_file}"
+df_cleaned.to_csv(cleaned_file, index=False)
+print(f"Cleaned data saved to: {cleaned_file}")
